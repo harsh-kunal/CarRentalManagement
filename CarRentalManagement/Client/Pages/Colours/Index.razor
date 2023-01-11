@@ -2,9 +2,18 @@
 @inject HttpClient _client
 @inject IJSRuntime js
 @attribute [Authorize]
+@inject HttpInterceptorService _interceptor
+@implements IDisposable
 
 
 <h3 class="card-title">Car Colours</h3>
+
+<a href="/colours/create" class="btn btn-secondary">
+    <span class="oi oi-plus"></span>
+    Create New Colour
+</a>
+<br />
+<br />
 @if (Colours == null)
 {
     <div class="alert alert-info">Loading Colours...</div>
@@ -24,10 +33,10 @@ else
                 <tr>
                     <td>@colour.Name</td>
                     <td>
-                        <a href="/makes/view/@colour.Id" class="btn btn-primary">
+                        <a href="/colours/view/@colour.Id" class="btn btn-primary">
                             <span class="oi oi-book"></span>
                         </a>
-                        <a href="/makes/edit/@colour.Id" class="btn btn-warning">
+                        <a href="/colours/edit/@colour.Id" class="btn btn-warning">
                             <span class="oi oi-pencil"></span>
                         </a>
                         <button class="btn btn-danger" @onclick="@(()=>Delete(colour.Id))">
@@ -45,6 +54,7 @@ else
 
     protected async override Task OnInitializedAsync()
     {
+        _interceptor.MonitorEvent();
         Colours = await _client.GetFromJsonAsync<List<Colour>>($"{Endpoints.ColoursEndpoint}");
     }
 
@@ -54,11 +64,13 @@ else
         var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {colour.Name}?");
         if (confirm)
         {
-            await _client.DeleteAsync($"{Endpoints.ModelsEndpoint}/{colourId}");
+            await _client.DeleteAsync($"{Endpoints.ColoursEndpoint}/{colourId}");
             await OnInitializedAsync();
         }
-
-
     }
 
+    public void Dispose()
+    {
+        _interceptor.DisposeEvent();
+    }
 }
